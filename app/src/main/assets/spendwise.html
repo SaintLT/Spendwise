@@ -77,6 +77,12 @@ input,select{background:var(--card);border:1px solid var(--line);border-radius:1
 .box .btn{margin-top:16px}.box .row .btn{flex:1}
 textarea{width:100%;height:120px;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:14px;padding:10px;font:12px monospace;margin-top:8px}
 .err{outline:2px solid var(--bad)}
+#lock{position:fixed;inset:0;background:var(--bg);z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+#lock[hidden]{display:none}
+.dots{display:flex;gap:14px}.dots i{width:14px;height:14px;border-radius:50%;border:2px solid var(--acc)}.dots i.f{background:var(--acc)}
+.pad{display:grid;grid-template-columns:repeat(3,72px);gap:14px}
+.pad button{height:72px;border-radius:50%;border:0;background:var(--card);box-shadow:var(--sh);font-size:24px;font-weight:600}
+
 .hero{background:linear-gradient(135deg,#1d4ed8 0%,#4f46e5 55%,#7c3aed 100%);color:#fff;border-radius:26px;padding:22px 20px;margin-bottom:14px;box-shadow:0 10px 28px rgba(79,70,229,.35);position:relative;overflow:hidden;animation:rise .4s ease both}
 .hero::after{content:"";position:absolute;right:-40px;top:-50px;width:170px;height:170px;border-radius:50%;background:rgba(255,255,255,.1)}
 @keyframes rise{from{opacity:0;transform:translateY(10px)}}
@@ -117,12 +123,13 @@ button{transition:transform .12s}button:active{transform:scale(.96)}
   <main id="main"></main>
 </div>
 <nav class="tabs"><div id="tabs"></div></nav>
+<div id="lock" hidden></div>
 <div class="sheet" id="sheet" hidden></div>
 <script>
 const $=s=>document.querySelector(s),K='spendwise-v1',PAL=['#2f6bff','#ff5c9a','#7c5cff','#ff9f2e','#19c3b1','#22c55e','#ef4444','#64748b','#0ea5e9'],PM=['Cash','Mobile money','Card','Bank transfer'],CUR=['$','€','£','KSh','USh','TSh','₦','R','₹'];
 const DEF=['Food & groceries','Transport','Bills & utilities','Airtime & data','Rent','Shopping','Health','Entertainment','Other'];
 let S=null;try{S=JSON.parse(localStorage.getItem(K))}catch(e){}
-if(!S||!S.tx)S={tx:[],cur:'$',cats:DEF.map((n,i)=>({name:n,color:PAL[i%PAL.length],budget:0}))};
+if(!S||!S.tx)S={tx:[],cur:'KSh',cats:DEF.map((n,i)=>({name:n,color:PAL[i%PAL.length],budget:0}))};
 const save=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}};
 const pad=n=>String(n).padStart(2,'0'),today=()=>{const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};
 const V={tab:'ov',ym:today().slice(0,7),q:'',f:''};let M={};
@@ -153,7 +160,7 @@ function overview(){
   <div class="hs">${Q.L?(ovr?fmt(Q.tot-Q.L)+' over your '+(Q.wk?'weekly':'monthly')+' limit':fmt(Q.L-Q.tot)+' left of '+fmt(Q.L)):'No spending limit set'}</div>
   <div class="hp"><div style="width:${Math.min(100,Q.pct)}%;background:${ovr?'#fecdd3':wrn?'#fde68a':'#4ade80'}"></div></div>
   <div class="hf"><span>${Q.L&&!ovr&&Q.left>0?'About '+fmt((Q.L-Q.tot)/Q.left)+' a day to stay on track':Q.L?'':'Set a limit to get warnings'}</span>${Q.L?`<span>${Math.round(Q.pct)}% used</span>`:`<button class="hlk" onclick="setTab('mg')">Set limit →</button>`}</div></div>
-  ${insights(L,bc,ptot,tot)}
+  ${insights(L,bc,ptot,tot)}${who(L)}
   <div class="card"><h2>Spending by Category</h2><div class="donut"><svg viewBox="0 0 42 42" role="img" aria-label="Spending by category"><circle cx="21" cy="21" r="15.9155" fill="none" stroke="var(--soft)" stroke-width="7"/>${segs}<text x="21" y="20.4" text-anchor="middle" font-size="3" style="fill:var(--mut)">Total</text><text x="21" y="25" text-anchor="middle" font-size="4.2" font-weight="700" style="fill:var(--ink)">${S.cur}${tot.toLocaleString(undefined,{notation:'compact',maximumFractionDigits:1})}</text></svg><div class="leg">${leg}</div></div></div>
   <div class="card"><h2>Spending Breakdown</h2>${[...L].sort((a,b)=>b.date.localeCompare(a.date)||b.id.localeCompare(a.id)).slice(0,6).map(txRow).join('')}<button class="btn ghost" style="width:100%;margin-top:10px" onclick="setTab('tx')">See all transactions</button></div>
   <div class="card"><h2>Spending by Day</h2><svg class="bars" viewBox="0 0 ${dim*10} 80" preserveAspectRatio="none" role="img" aria-label="Daily spending bars">${bars}</svg></div>`}
@@ -164,6 +171,27 @@ function lim(){
   else{list=inM(V.ym);const[y,m]=V.ym.split('-').map(Number);left=V.ym===T.slice(0,7)?new Date(y,m,0).getDate()-d.getDate()+1:0}
   const tot=sum(list),L=+S.limit||0;return{wk,tot,L,left,pct:L?tot/L*100:0}}
 function setPer(p){S.period=p;save();render()}
+let LB=Date.now(),PN={mode:'',v:'',first:''};
+function lockUI(mode){PN={mode,v:'',first:''};$('#lock').hidden=false;pinDraw()}
+function lockNow(){if(S.pin)lockUI('unlock')}
+function pinDraw(){const m=PN.mode,T={unlock:'Enter your PIN',set1:'Choose a 4-digit PIN',set2:'Confirm your PIN',off:'Enter your PIN to turn off the lock'}[m];
+  $('#lock').innerHTML=`<div style="font-size:44px">🔒</div><h2 style="margin:0">${T}</h2><div class="dots">${[0,1,2,3].map(i=>`<i class="${i<PN.v.length?'f':''}"></i>`).join('')}</div><p class="sm bad" id="pe" style="min-height:18px;margin:0"></p><div class="pad">${[1,2,3,4,5,6,7,8,9].map(n=>`<button onclick="pinKey('${n}')">${n}</button>`).join('')}<button style="font-size:14px;box-shadow:none;background:none" onclick="${m==='unlock'?'':'pinCancel()'}">${m==='unlock'?'':'Cancel'}</button><button onclick="pinKey('0')">0</button><button onclick="pinKey('<')">⌫</button></div>${m==='unlock'?'<button class="lnk" onclick="pinForgot()">Forgot PIN?</button>':''}`}
+function pinCancel(){$('#lock').hidden=true}
+function pinForgot(){if(confirm('The only way in is to erase the data stored in Spendwise on this phone. Your M-Pesa messages will be imported again on the next sync. Continue?')){S.tx=[];S.pin='';S.last=0;S.map={};save();$('#lock').hidden=true;render();syncSms(false)}}
+function pinKey(k){if(k==='<')PN.v=PN.v.slice(0,-1);else if(PN.v.length<4)PN.v+=k;pinDraw();if(PN.v.length<4)return;
+  const h=hs('sw'+PN.v),m=PN.mode;
+  setTimeout(()=>{
+    if(m==='unlock'||m==='off'){if(h===S.pin){if(m==='off'){S.pin='';save()}$('#lock').hidden=true;render()}else{PN.v='';pinDraw();$('#pe').textContent='Wrong PIN, try again'}}
+    else if(m==='set1'){PN.first=h;PN.mode='set2';PN.v='';pinDraw()}
+    else if(h===PN.first){S.pin=h;save();$('#lock').hidden=true;render();toast('PIN lock is on')}
+    else{PN.mode='set1';PN.v='';pinDraw();$('#pe').textContent='PINs did not match, start again'}},120)}
+function backup(){$('#out').innerHTML='<textarea id="ta" readonly></textarea><p class="sm mut">Backup copied. Paste it somewhere safe, like a note to yourself.</p>';const ta=$('#ta');ta.value=JSON.stringify(S);ta.select();try{document.execCommand('copy')}catch(e){}}
+function restore(){$('#out').innerHTML='<textarea id="ta" placeholder="Paste your backup here"></textarea><button class="btn" style="margin-top:8px" onclick="doRestore()">Restore</button>'}
+function doRestore(){try{const o=JSON.parse($('#ta').value);if(!o.tx||!o.cats)throw 0;if(!confirm('Replace everything in Spendwise with this backup?'))return;S=o;S.map=S.map||{};save();render();toast('Backup restored')}catch(e){toast('That does not look like a Spendwise backup')}}
+function upd(){if(window.Android)Android.openUrl('https://github.com/SaintLT/Spendwise/releases/latest')}
+function who(L){const m={};L.forEach(t=>{const k=t.note||t.cat,o=m[k]=m[k]||{v:0,n:0,c:t.cat};o.v+=t.amt;o.n++});
+  const a=Object.entries(m).sort((x,y)=>y[1].v-x[1].v).slice(0,5);if(!a.length)return'';
+  return `<div class="card"><h2>Top recipients</h2><p class="mut sm" style="margin:0 0 6px">Who your money went to this month</p>${a.map(([k,o])=>`<div class="ins"><span class="dot">${ico(o.c)}</span><span class="n"><b>${esc(k)}</b><span class="mut sm">${o.n} payment${o.n>1?'s':''}</span></span><b>${fmt(o.v)}</b></div>`).join('')}</div>`}
 function insights(L,bc,ptot,tot){
   const big=[...L].sort((a,b)=>b.amt-a.amt)[0],wd=[0,0,0,0,0,0,0];L.forEach(t=>wd[new Date(t.date+'T00:00').getDay()]+=t.amt);
   const d=wd.indexOf(Math.max(...wd)),DN=['Sundays','Mondays','Tuesdays','Wednesdays','Thursdays','Fridays','Saturdays'];
@@ -181,8 +209,8 @@ function manage(){
   const rows=S.cats.map((c,i)=>{const v=sp[c.name]||0,b=+c.budget,p=b?Math.min(100,v/b*100):0;return `<div class="br"><div class="top"><i class="dot" style="background:${c.color};width:12px;height:12px;border-radius:4px"></i><b>${esc(c.name)}</b><input type="number" min="0" inputmode="decimal" placeholder="No limit" value="${b||''}" onchange="setB(${i},this.value)" aria-label="Monthly budget for ${esc(c.name)}"><button class="x" onclick="delCat(${i})" aria-label="Remove ${esc(c.name)}">×</button></div>${b?`<div class="prog"><div style="width:${p}%;background:${v>b?'var(--bad)':c.color}"></div></div><div class="sm ${v>b?'bad':'mut'}" style="margin-top:4px">${fmt(v)} of ${fmt(b)} this month</div>`:''}</div>`}).join('');
   return `<div class="card"><h2>Spending limit</h2><p class="mut sm" style="margin:0 0 10px">Choose how much you want to spend. Spendwise warns you when you get close or go over.</p><div class="seg"><button class="${S.period==='week'?'on':''}" onclick="setPer('week')">Weekly</button><button class="${S.period!=='week'?'on':''}" onclick="setPer('month')">Monthly</button></div><input type="number" min="0" inputmode="decimal" placeholder="e.g. 7000" value="${S.limit||''}" onchange="S.limit=Math.max(0,parseFloat(this.value)||0);save();render()" aria-label="Spending limit amount" style="margin-top:10px;font-size:20px;font-weight:700"></div>
   <div class="card"><h2>Category budgets (optional)</h2><p class="mut sm" style="margin-top:-6px">Set a limit per category. Leave empty for no limit.</p>${rows}<div class="tools" style="margin:12px 0 0"><input id="nc" placeholder="New category name"><button class="btn" onclick="addCat()">Add</button></div></div>
-  <div class="card"><h2>Settings</h2><label class="sm mut">Read messages from (sender names, comma separated)<input style="margin-top:4px" value="${esc(S.senders||'MPESA')}" onchange="S.senders=this.value.trim()||'MPESA';S.last=0;save()"></label><div style="height:12px"></div><label class="sm mut">Currency symbol<select style="margin-top:4px" onchange="S.cur=this.value;save();render()">${CUR.map(c=>`<option${S.cur===c?' selected':''}>${c}</option>`).join('')}</select></label>
-  <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn ghost" onclick="csv()">Export as CSV</button><button class="btn ghost bad" onclick="wipe()">Erase all data</button></div><div id="out"></div>
+  <div class="card"><h2>Settings</h2><label class="sm mut">Read messages from (sender names, comma separated)<input style="margin-top:4px" value="${esc(S.senders||'MPESA')}" onchange="S.senders=this.value.trim()||'MPESA';S.last=0;save()"></label><div style="height:12px"></div><label class="sm mut">Currency symbol<select style="margin-top:4px" onchange="S.cur=this.value;S.curSet=1;save();render()">${CUR.map(c=>`<option${S.cur===c?' selected':''}>${c}</option>`).join('')}</select></label>
+  <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn ghost" onclick="csv()">Export as CSV</button><button class="btn ghost" onclick="backup()">Copy backup</button><button class="btn ghost" onclick="restore()">Restore backup</button><button class="btn ghost" onclick="lockUI('${S.pin?'off':'set1'}')">${S.pin?'Turn off PIN lock':'Set a PIN lock'}</button>${window.Android?'<button class="btn ghost" onclick="upd()">Check for updates</button>':''}<button class="btn ghost bad" onclick="wipe()">Erase all data</button></div><div id="out"></div>
   <p class="mut sm">Your data stays in this browser on this device. Export a CSV to keep a backup.</p></div>`}
 function render(){
   const [y,m]=V.ym.split('-');$('#mt').textContent=new Date(y,m-1,1).toLocaleDateString(undefined,{month:'long',year:'numeric'});
@@ -190,7 +218,7 @@ function render(){
   $('#ttl').textContent={ov:'Spending',tx:'Transactions',mg:'Budgets'}[V.tab];
   const IC={ov:'<path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',tx:'<path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/>',mg:'<path d="M21 12A9 9 0 1 1 12 3v9z"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15z"/>'};
   $('#tabs').innerHTML=[['ov','Home'],['tx','Transactions'],['mg','Budgets']].map(([k,l])=>`<button class="${V.tab===k?'on':''}" onclick="setTab('${k}')"><svg viewBox="0 0 24 24" aria-hidden="true">${IC[k]}</svg>${l}</button>`).join('');
-  $('#main').innerHTML=V.tab==='ov'?overview():V.tab==='tx'?list():manage();
+  $('#main').innerHTML=(window.Android&&!Android.hasPermission()?'<button class="card" style="width:100%;text-align:left;border:0;color:var(--bad);font-weight:600" onclick="permHelp()">⚠ Not reading your M-Pesa messages yet. Tap to fix</button>':'')+(V.tab==='ov'?overview():V.tab==='tx'?list():manage());
   if(V.tab==='tx'){const n=inM(V.ym).length;$('#cnt').textContent=n?'':'No transactions this month.'}
 }
 function openM(id){
@@ -222,7 +250,7 @@ function sample(){
     S.tx.push({id:'s'+i+Math.random().toString(36).slice(2,5),amt:Math.round((r[1]+Math.random()*(r[2]-r[1]))/10)*10,cat:c,note:r[0],date:ym+'-'+pad(1+Math.floor(Math.random()*maxD)),method:PM[Math.floor(Math.random()*3)]})}
   [['Food & groceries',15000],['Transport',8000],['Entertainment',3000]].forEach(([n,b])=>{const c=S.cats.find(x=>x.name===n);if(c)c.budget=b});
   save();V.ym=ym;render()}
-S.map=S.map||{};if(!S.v2){S.cats.forEach((c,i)=>c.color=PAL[i%PAL.length]);S.v2=1}function applyTheme(){const t=S.theme||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.dataset.theme=t;const b=$('#thm');if(b)b.textContent=t==='dark'?'☀':'☾'}
+S.map=S.map||{};if(!S.curSet&&S.cur==='$')S.cur='KSh';if(!S.v2){S.cats.forEach((c,i)=>c.color=PAL[i%PAL.length]);S.v2=1}function applyTheme(){const t=S.theme||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.dataset.theme=t;const b=$('#thm');if(b)b.textContent=t==='dark'?'☀':'☾'}
 function toggleTheme(){S.theme=document.documentElement.dataset.theme==='dark'?'light':'dark';save();applyTheme()}
 let I={rows:[],skip:0};
 const RULES=[['Airtime & data',/airtime|data bundle|bundle|top.?up|bingwa/i],['Transport',/uber|bolt|little ?cab|taxi|fuel|petrol|shell|rubis|total ?energies|matatu|fare|parking|sgr|\bbus\b/i],['Bills & utilities',/kplc|kenya power|electric|power|water|wifi|internet|zuku|dstv|gotv|startimes|insurance|subscription|\bbills?\b|nhif|\bsha\b|\bkra\b/i],['Rent',/\brent\b|landlord/i],['Health',/pharmacy|chemist|hospital|clinic|medic|dental|\blab\b/i],['Entertainment',/cinema|movie|netflix|showmax|spotify|\bbet\b|sportpesa|\bclub\b|ticket|game/i],['Food & groceries',/naivas|carrefour|quickmart|tuskys|chandarana|cleanshelf|artcaffe|supermarket|grocer|market|restaurant|cafe|kfc|java|pizza|food|eatery|butchery|bakery|glovo|chicken|hotel|mama/i],['Shopping',/jumia|kilimall|\bshop|store|mall|cloth|fashion|boutique|amazon|electronics|hardware/i]];
@@ -256,7 +284,9 @@ function syncSms(auto){
     S.tx.push({id:'m'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),amt:p.amt,cat:p.cat,note:p.note,date:p.date,method:p.method,sms:p.id,key:p.key,fee:p.fee});n++});
   S.last=Date.now();save();
   if(n){V.ym=today().slice(0,7);render();{const Q=lim();toast('Added '+n+' expense'+(n>1?'s':'')+' from SMS'+(Q.L&&Q.tot>Q.L?' · You are over your limit':Q.L&&Q.pct>=80?' · '+Math.round(Q.pct)+'% of limit used':''))}}else if(!auto)toast('No new expenses found')}
-function openImport(){if(window.Android){syncSms(false);return}
+function openImport(){if(window.Android){if(Android.hasPermission())syncSms(false);else permHelp();return}openPaste()}
+function permHelp(){$('#sheet').innerHTML=`<div class="box" data-k="imp"><div class="row"><h2 style="margin:0">Allow SMS access</h2><button class="x" onclick="closeM()" aria-label="Close">×</button></div><p class="mut sm">Spendwise needs permission to read your M-Pesa messages. If Android blocks it, open app settings, tap the ⋮ menu and choose Allow restricted settings, then allow SMS. Or paste your messages instead.</p><button class="btn" style="width:100%" onclick="closeM();Android.requestPermission()">Try again</button><button class="btn ghost" style="width:100%" onclick="Android.openSettings();closeM()">Open app settings</button><button class="btn ghost" style="width:100%" onclick="openPaste()">Paste messages instead</button></div>`;$('#sheet').hidden=false}
+function openPaste(){
   $('#sheet').innerHTML=`<div class="box" data-k="imp"><div class="row"><h2 style="margin:0">Import from SMS</h2><button class="x" onclick="closeM()" aria-label="Close">×</button></div><p class="mut sm">Copy your payment messages (mobile money or bank) and paste them below. Spendwise finds the amount, date and merchant, then sorts each one into a category. Nothing leaves this device.</p><textarea id="ib" style="height:140px;font:14px system-ui" placeholder="Paste messages here, one after another"></textarea><div id="ip"></div><button class="btn" id="ib2" onclick="findSms()">Find expenses</button></div>`;$('#sheet').hidden=false}
 function findSms(){
   const t=$('#ib').value.trim();if(!t)return;
@@ -273,8 +303,8 @@ function addSms(){
   if(L.length)V.ym=L.map(r=>r.date).sort().pop().slice(0,7);save();closeM();render()}
 document.addEventListener('keydown',e=>{if($('#sheet').hidden)return;if(e.key==='Escape')closeM();if(e.key==='Enter'&&e.target.tagName==='INPUT'&&e.target.id!=='x'&&!e.target.closest('[data-k=imp]'))saveTx()});
 $('#sheet').addEventListener('click',e=>{if(e.target.id==='sheet')closeM()});
-applyTheme();render();
-if(window.Android){$('#syn').textContent='↻';$('#syn').setAttribute('aria-label','Sync SMS now');window.onAppResume=()=>syncSms(true);window.onSmsPermission=()=>Android.hasPermission()?syncSms(false):toast('Allow SMS access to track expenses automatically');setTimeout(()=>syncSms(true),500)}
+applyTheme();render();lockNow();
+if(window.Android){$('#syn').textContent='↻';$('#syn').setAttribute('aria-label','Sync SMS now');window.onAppResume=()=>{if(S.pin&&Date.now()-LB>30000)lockNow();render();syncSms(true)};window.onAppPause=()=>{LB=Date.now()};window.onSmsPermission=()=>{render();if(Android.hasPermission())syncSms(false);else permHelp()};setTimeout(()=>syncSms(true),500)}
 </script>
 </body>
 </html>

@@ -2,10 +2,14 @@ package com.spendwise.app
 
 import android.Manifest
 import android.app.Activity
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
+import android.provider.Settings
 import android.os.Bundle
 import android.provider.Telephony
 import android.webkit.JavascriptInterface
+import android.webkit.WebChromeClient
 import android.webkit.WebView
 import org.json.JSONArray
 import org.json.JSONObject
@@ -22,6 +26,16 @@ class MainActivity : Activity() {
         @JavascriptInterface
         fun requestPermission() = runOnUiThread {
             requestPermissions(arrayOf(Manifest.permission.READ_SMS), 1)
+        }
+
+        @JavascriptInterface
+        fun openSettings() = runOnUiThread {
+            startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + packageName)))
+        }
+
+        @JavascriptInterface
+        fun openUrl(url: String) {
+            if (url.startsWith("https://github.com/SaintLT/Spendwise")) runOnUiThread { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
         }
 
         @JavascriptInterface
@@ -55,8 +69,14 @@ class MainActivity : Activity() {
         setContentView(web)
         web.settings.javaScriptEnabled = true
         web.settings.domStorageEnabled = true
+        web.webChromeClient = WebChromeClient()
         web.addJavascriptInterface(Bridge(), "Android")
         web.loadUrl("file:///android_asset/spendwise.html")
+    }
+
+    override fun onPause() {
+        super.onPause()
+        if (::web.isInitialized) web.evaluateJavascript("window.onAppPause&&onAppPause()", null)
     }
 
     override fun onResume() {

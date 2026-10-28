@@ -8,7 +8,7 @@ android {
     compileSdk = 34
     defaultConfig {
         applicationId = "com.spendwise.app"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 34
         versionCode = runNo.toInt()
         versionName = "1.0." + runNo
