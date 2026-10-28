@@ -27,15 +27,22 @@ Spendwise is an Android app that reads your M-Pesa confirmation messages, record
 
 ## Install
 
-1. Open the [latest release](https://github.com/SaintLT/Spendwise/releases/latest) on your phone and download `Spendwise.apk`.
-2. Open the file and allow installing from your browser when Android asks. If Play Protect warns you, choose **Install anyway**.
-3. Open Spendwise and allow SMS access.
+The recommended way is [Obtainium](https://github.com/ImranR98/Obtainium). It installs Spendwise from this repository, avoids Android's SMS block, and keeps the app updated.
 
-**Android 13 and newer.** Android may block SMS access for apps installed from a file. If the option is greyed out, install through [Obtainium](https://github.com/ImranR98/Obtainium) instead (see below). Or go to **Settings → Apps → Spendwise**, tap **⋮** and choose **Allow restricted settings**, then allow SMS again.
+1. Install Obtainium from its [releases page](https://github.com/ImranR98/Obtainium/releases) by downloading `app-release.apk`.
+2. In Obtainium, tap **Add App**, paste `https://github.com/SaintLT/Spendwise` and tap **Add**.
+3. Tap **Install** and confirm. Allow Obtainium to install unknown apps if Android asks.
+4. Open Spendwise and allow SMS access.
+
+If Play Protect shows a warning, it's because Spendwise comes from an independent developer and asks to read SMS. Choose **More details → Install anyway**. The full source code is in this repository.
+
+### Install without Obtainium
+
+Download `Spendwise.apk` from the [latest release](https://github.com/SaintLT/Spendwise/releases/latest) and open it. On Android 13 and newer, SMS access may be blocked for apps installed this way. If so, go to **Settings → Apps → Spendwise**, tap **⋮**, choose **Allow restricted settings**, then allow SMS again. Or reinstall through Obtainium.
 
 ## Get updates
 
-Add `https://github.com/SaintLT/Spendwise` to [Obtainium](https://github.com/ImranR98/Obtainium). It checks this repository for new releases and updates the app for you. You can also tap **Check for updates** in Spendwise under **Budgets → Settings**.
+Obtainium checks this repository and offers each new release. Tap **Update**. You can also tap **Check for updates** in Spendwise under **Budgets → Settings**.
 
 Updates keep your data, because every release is signed with the same key.
 
