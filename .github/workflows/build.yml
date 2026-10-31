@@ -20,6 +20,7 @@ jobs:
       - name: Prepare signing key
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         run: |
           if [ -z "$KEYSTORE_BASE64" ]; then
             echo "Signing secrets are missing. Add KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS and KEY_PASSWORD under Settings > Secrets and variables > Actions."
@@ -29,6 +30,13 @@ jobs:
             echo "KEYSTORE_BASE64 is not valid base64. Copy it again from your .jks file and update the secret."
             exit 1
           fi
+          echo "Decoded key file size: $(wc -c < "$RUNNER_TEMP/release.jks") bytes (the correct size is 2606)"
+          if ! keytool -list -keystore "$RUNNER_TEMP/release.jks" -storetype PKCS12 -storepass "$KEYSTORE_PASSWORD" > "$RUNNER_TEMP/kt.txt" 2>&1; then
+            cat "$RUNNER_TEMP/kt.txt"
+            echo "The key file cannot be opened. Check KEYSTORE_PASSWORD, and copy KEYSTORE_BASE64 again."
+            exit 1
+          fi
+          grep -E "entry|spendwise" "$RUNNER_TEMP/kt.txt"
       - name: Build
         run: gradle assembleRelease --no-daemon
         env:
@@ -42,4 +50,3 @@ jobs:
           tag_name: v1.0.${{ github.run_number }}
           name: Spendwise 1.0.${{ github.run_number }}
           files: Spendwise.apk
-          
