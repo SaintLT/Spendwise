@@ -97,4 +97,22 @@ If you fork this project, create your own signing key, keep it private, and conf
 ## Project layout
 
 ```text
-app
+app/src/main/assets/spendwise.html        App screens and message reader
+app/src/main/java/com/spendwise/app/      Android shell (Kotlin)
+app/src/main/res/                         App icon and resources
+.github/workflows/build.yml               Build and release workflow
+```
+
+## Limitations
+
+- Spendwise understands only the M-Pesa message formats it was written for. Other formats may be skipped.
+- It records only messages that are still in your phone's inbox.
+- The spending-limit warning appears when you open the app. It does not yet send background notifications.
+- Spendwise is for Android. iPhones do not allow apps to read SMS in the same way.
+
+## Roadmap
+
+- Fingerprint unlock
+- Background alerts when you pass your limit
+- Monthly reports
+- Recurring bills
