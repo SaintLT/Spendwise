@@ -25,7 +25,10 @@ jobs:
             echo "Signing secrets are missing. Add KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS and KEY_PASSWORD under Settings > Secrets and variables > Actions."
             exit 1
           fi
-          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.jks"
+          if ! echo "$KEYSTORE_BASE64" | tr -d '[:space:]' | base64 --decode > "$RUNNER_TEMP/release.jks"; then
+            echo "KEYSTORE_BASE64 is not valid base64. Copy it again from your .jks file and update the secret."
+            exit 1
+          fi
       - name: Build
         run: gradle assembleRelease --no-daemon
         env:
@@ -39,3 +42,4 @@ jobs:
           tag_name: v1.0.${{ github.run_number }}
           name: Spendwise 1.0.${{ github.run_number }}
           files: Spendwise.apk
+          
