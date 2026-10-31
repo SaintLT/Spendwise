@@ -1,7 +1,7 @@
-<h1 align="center">Spendwise</h1>
+# Spendwise
 
 <p align="center">
-  Track every M-Pesa transaction automatically and get warned when you pass your spending limit.
+  Track your M-Pesa spending and see how it compares with a weekly or monthly limit.
 </p>
 
 <p align="center">
@@ -14,44 +14,56 @@
 
 ## What it does
 
-Spendwise is an Android app that reads your M-Pesa confirmation messages, records each payment, and compares your spending with a weekly or monthly limit you choose. You don't type expenses in by hand.
+Spendwise is an Android app that reads M-Pesa confirmation messages, records payments, and compares spending with a weekly or monthly limit. You don't have to enter each expense manually.
 
-- **Automatic tracking.** Reads messages from `MPESA` and records the amount, date, recipient and transaction fee.
-- **Spending limit.** Set a weekly or monthly limit (for example KSh 7,000). The home card turns amber near the limit and red when you pass it.
-- **No double counting.** Each message's transaction code is remembered, so a message is never recorded twice.
-- **Money out only.** Messages about money you received are ignored.
-- **Insights.** See your biggest expense, the weekday you spend most on, and the people and shops you pay most (top recipients).
-- **Optional categories.** Spendwise guesses categories from merchant names such as Naivas or KPLC. Correct one once and it remembers.
-- **Privacy tools.** PIN lock, light and dark mode, and a copy-and-paste backup you can restore later.
-- **Paste option.** If you prefer, copy messages from your Messages app and paste them in.
+- **Automatic tracking:** Reads messages from `MPESA` and records the amount, date, recipient, and transaction fee.
+- **Spending limits:** Set a weekly or monthly limit. The home card turns amber as you approach it and red when you pass it.
+- **No double counting:** Remembers each transaction code so a message isn't recorded twice.
+- **Money out only:** Ignores messages about money you received.
+- **Insights:** Shows your biggest expense, the weekday you spend most, and your top recipients.
+- **Optional categories:** Suggests categories based on merchant names. Correct a category once and it remembers your choice.
+- **Privacy tools:** PIN lock, light and dark mode, and a copy-and-paste backup you can restore later.
+- **Paste option:** Copy messages from your Messages app and paste them into Spendwise.
 
 ## Install
 
-The recommended way is [Obtainium](https://github.com/ImranR98/Obtainium). It installs Spendwise from this repository, avoids Android's SMS block, and keeps the app updated.
+The recommended way to install and keep Spendwise updated is [Obtainium](https://github.com/ImranR98/Obtainium).
 
-1. Install Obtainium from its [releases page](https://github.com/ImranR98/Obtainium/releases) by downloading `app-release.apk`.
-2. In Obtainium, tap **Add App**, paste `https://github.com/SaintLT/Spendwise` and tap **Add**.
-3. Tap **Install** and confirm. Allow Obtainium to install unknown apps if Android asks.
-4. Open Spendwise and allow SMS access.
+### 1. Install Obtainium
 
-If Play Protect shows a warning, it's because Spendwise comes from an independent developer and asks to read SMS. Choose **More details → Install anyway**. The full source code is in this repository.
+**[Download Obtainium for Android](https://github.com/ImranR98/Obtainium/releases/latest)**
 
-### Install without Obtainium
+On the releases page, download the APK that matches your phone. For most modern Android phones, choose the file with `arm64-v8a` in its name. Open the downloaded APK and follow Android's installation prompts.
 
-Download `Spendwise.apk` from the [latest release](https://github.com/SaintLT/Spendwise/releases/latest) and open it. On Android 13 and newer, SMS access may be blocked for apps installed this way. If so, go to **Settings → Apps → Spendwise**, tap **⋮**, choose **Allow restricted settings**, then allow SMS again. Or reinstall through Obtainium.
+### 2. Add Spendwise in Obtainium
 
-## Get updates
+1. Open Obtainium and tap **Add App**.
+2. Paste this repository address: `https://github.com/SaintLT/Spendwise`
+3. Tap **Add**, then tap **Install**.
+4. Allow Obtainium to install apps if Android asks.
+5. Open Spendwise and grant SMS permission if you want it to read M-Pesa messages.
 
-Obtainium checks this repository and offers each new release. Tap **Update**. You can also tap **Check for updates** in Spendwise under **Budgets → Settings**.
+### Install Spendwise without Obtainium
 
-Updates keep your data, because every release is signed with the same key.
+Download `Spendwise.apk` from the [latest Spendwise release](https://github.com/SaintLT/Spendwise/releases/latest), open it, and follow Android's installation prompts.
+
+If Android blocks SMS access for an app installed this way, check **Settings → Apps → Spendwise** for the restricted-settings option, then allow SMS access if available.
+
+Android may show security warnings for apps installed outside Google Play, especially apps that request SMS access. Only install the app if you trust its source and understand the permissions it requests.
+
+## Updates
+
+Obtainium can check this repository for new releases and offer updates. You can also check for updates in Spendwise under **Budgets → Settings**.
+
+An update can be installed over an existing copy only when it is signed with a compatible signing identity. If the signing key changes, an Android signing-key rotation or another migration plan may be required.
 
 ## Privacy
 
-- Spendwise reads only messages whose sender matches `MPESA` by default. You can change the sender names in **Budgets → Settings**.
-- The app has **no internet permission**. Your messages and spending data stay on your phone.
-- Nothing is sent to any server. Use **Copy backup** if you want a copy of your data.
-- The PIN lock keeps other people out of the app. It does not encrypt your data.
+- By default, Spendwise reads messages whose sender matches `MPESA`. You can change the sender names in **Budgets → Settings**.
+- The app does not request internet permission. Your messages and spending data stay on your phone.
+- Spendwise does not send your messages or spending data to a server.
+- Use **Copy backup** if you want to keep a separate copy of your data.
+- The PIN lock helps keep other people out of the app, but it does not encrypt your data.
 
 Spendwise is an independent project. It is not made by, or affiliated with, Safaricom or M-PESA.
 
@@ -59,40 +71,30 @@ Spendwise is an independent project. It is not made by, or affiliated with, Safa
 
 | Layer | Technology | Job |
 |---|---|---|
-| Screens and logic | HTML, CSS, JavaScript | Totals, limits, charts, PIN lock, backup |
-| Message reader | JavaScript | Finds the amount, date, recipient, fee and transaction code in each message |
-| Android shell | Kotlin, WebView | Shows the screens and reads SMS from the allowed senders |
-| Build and release | GitHub Actions | Builds and signs the APK and publishes it under Releases |
+| Screens and logic | HTML, CSS, JavaScript | Totals, limits, charts, PIN lock, and backup |
+| Message reader | JavaScript | Finds the amount, date, recipient, fee, and transaction code in each message |
+| Android shell | Kotlin, WebView | Displays the screens and reads SMS from permitted senders |
+| Build and release | GitHub Actions | Builds the APK and publishes releases |
 
-Every push to `main` builds a new release. The version number comes from the build number.
+The version number is based on the build number used by the workflow.
 
 ## Build it yourself
 
-You don't need Android Studio. Fork this repository and push a change. GitHub Actions builds the APK and attaches it to a new release.
+You can build the app locally with JDK 17 and Gradle 8.7. From the project folder, run:
 
-To build locally you need JDK 17 and Gradle 8.7, then run `gradle assembleRelease`.
+```bash
+gradle assembleRelease
+```
 
-`release.jks` is a signing key committed for personal use. If you fork this project to share it with other people, generate your own key and keep it private.
+### Signing keys
+
+Never commit a signing keystore or its passwords to a repository. Keep signing credentials out of source control and use protected GitHub Actions secrets for automated release builds.
+
+The repository's previous signing key was exposed. Removing it from the current files does not remove copies from Git history or undo that exposure. Complete and test the signing-key migration before publishing a release intended to update existing installations.
+
+If you fork this project, create your own signing key, keep it private, and configure your own release workflow.
 
 ## Project layout
 
-```
-app/src/main/assets/spendwise.html        the app screens and message reader
-app/src/main/java/com/spendwise/app/      Android shell (Kotlin)
-app/src/main/res/                         app icon
-.github/workflows/build.yml               cloud build and release
-```
-
-## Limitations
-
-- It only understands the M-Pesa message wordings it was written for. Messages in other formats are skipped.
-- It records only messages still in your phone's inbox.
-- The limit warning shows when you open the app. It does not yet send a notification in the background.
-- Android only. iPhones don't allow apps to read SMS.
-
-## Roadmap
-
-- Fingerprint unlock
-- Background alert when you pass your limit
-- Monthly reports
-- Recurring bills
+```text
+app
