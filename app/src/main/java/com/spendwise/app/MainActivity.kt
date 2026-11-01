@@ -8,10 +8,10 @@ import android.content.pm.PackageManager
 import android.hardware.biometrics.BiometricManager
 import android.hardware.biometrics.BiometricPrompt
 import android.net.Uri
-import android.provider.Settings
 import android.os.Build
 import android.os.Bundle
 import android.os.CancellationSignal
+import android.provider.Settings
 import android.provider.Telephony
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
