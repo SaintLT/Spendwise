@@ -15,7 +15,7 @@ android {
         minSdk = 26
         targetSdk = 34
         versionCode = runNo.toInt()
-        versionName = "1.0." + runNo
+        versionName = "1.3." + runNo
     }
     signingConfigs {
         if (keystorePath != null) {
