@@ -45,12 +45,13 @@ same=(v,a,b)=>rng(v,a)[0]==rng(v,b)[0],tm=t=>new Date(t).toLocaleTimeString('en-
 dl=t=>new Date(t).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}),
 esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),
 col=p=>p>100?'var(--er)':p>=80?'var(--wa)':'var(--ok)',lab=p=>p>100?'Over limit':p>=80?'Slow down':'On track';
+if(window.Android&&S.demo){S.tx=[];S.demo=0}
 if(S.demo&&!S.tx.length){let z=7,R=()=>(z=z*16807%2147483647)/2147483647;const P=[['Naivas Supermarket','Food and groceries','t',900],['Kenya Power','Bills and utilities','t',1800],['Bolt','Transport','t',450],['Safaricom data bundle','Airtime and data','t',250],['Sent to Wanjiru Kamau','Other','p',1500],['Sent to Brian Otieno','Other','p',900]];
 for(let i=0;i<75;i++){const b=Date.now()-i*DAY;for(let j=0,n=1+(R()*2|0);j<n;j++){const p=P[R()*6|0];S.tx.push({id:'d'+i+j,t:d0(b)+(8+R()*11)*36e5,n:p[0],a:Math.round(p[3]*(.5+R())/10)*10,y:'s',c:p[1],k:p[2]})}
 if(i%11==3)S.tx.push({id:'i'+i,t:d0(b)+9*36e5,n:'Received from Wanjiru',a:6500,y:'i',c:'Other',k:'p'});if(i%17==5)S.tx.push({id:'o'+i,t:d0(b)+11*36e5,n:'To own Equity account',a:1500,y:'o',c:'Other',k:'t'})}
 save()}
 // Native bridge: Android calls SpendwiseImport([{id,t,n,a,y,c,k}]) with parsed messages
-window.SpendwiseImport=l=>{if(S.demo){S.tx=[];S.demo=0}const have=new Set(S.tx.map(x=>x.id));l.forEach(x=>{if(!have.has(x.id)){x.c=S.rules[x.n]||x.c||'Other';S.tx.push(x)}});save();go()};
+window.SpendwiseImport=l=>{let ch=0;if(S.demo){S.tx=[];S.demo=0;ch=1}const have=new Set(S.tx.map(x=>x.id));l.forEach(x=>{if(!have.has(x.id)){x.c=S.rules[x.n]||x.c||'Other';S.tx.push(x);ch=1}});save();ch&&go()};
 const row=x=>`<button class="row" onclick="ed('${x.id}')"><div class="ic">${esc(x.n.replace(/^(Sent to|Received from|To) /,'')[0]||'?')}</div><div class="f1"><b>${esc(x.n)}</b>${S.rules[x.n]?' <span class="mu">· learned</span>':''}<div class="mu">${x.y=='s'?esc(x.c):TY[x.y]} · ${tm(x.t)}</div></div>${x.y=='s'?`<b>${K(x.a)}</b>`:x.y=='i'?`<b class="pos">+${K(x.a)}</b>`:`<span class="mu">Not counted<br>${K(x.a)}</span>`}</button>`;
 function go(p){if(p)S.pg=p;save();document.documentElement.className=S.dark?'dk':'';document.documentElement.style.setProperty('--ac',TH[S.theme]);
 $('#app').innerHTML=!S.done?wel():S.lock?lk():({h:home,t:txs,s:stats,b:bud,p:prof,m:src}[S.pg])();scrollTo(0,0)}
@@ -60,7 +61,7 @@ function wel(){return`<div class="r"><div class="ic" style="width:40px">$</div><
 <label>Your name</label><input id="n" value="${esc(S.name)}" placeholder="Amani"><label>Email <span class="mu">(optional)</span></label><input id="e" value="${esc(S.email)}" placeholder="you@email.com"><label>Colour theme</label>
 <div class="r" style="margin:8px 0 28px">${Object.keys(TH).map(k=>`<button class="sw" aria-label="${k}" style="background:${TH[k]};border-color:${k==S.theme?'var(--tx)':'transparent'}" onclick="S.name=$('#n').value;S.email=$('#e').value;S.theme='${k}';go()"></button>`).join('')}</div>
 <button class="b" onclick="S.name=$('#n').value.trim();S.email=$('#e').value.trim();S.done=1;go('h')">Continue</button><button class="g" style="width:100%;margin-top:8px;border:0" onclick="S.done=1;go('h')">Skip for now</button>`}
-const lk=()=>`<h1 style="margin-top:30vh">Enter PIN</h1><input id="pn" type="password" inputmode="numeric" maxlength="6"><button class="b" onclick="$('#pn').value==S.pin?(S.lock=0,go()):(this.textContent='Wrong PIN, try again')">Unlock</button>`;
+const lk=()=>`<h1 style="margin-top:30vh">Enter PIN</h1><input id="pn" type="password" inputmode="numeric" maxlength="6"><button class="b" onclick="$('#pn').value==S.pin?(S.lock=0,go()):(this.textContent='Wrong PIN, try again')">Unlock</button>${window.Android&&Android.canBiometric()?'<button class="g" style="width:100%;margin-top:10px" onclick="Android.authenticate()">Use fingerprint</button>':''}`;
 if(S.pin)S.lock=1;
 function home(){const v=S.v,t=S.sel,L=inr(v,t),spent=sp(L),lm=S.lim[v],pv=sp(inr(v,shift(v,t,-1))),h=new Date().getHours(),now=Date.now(),
 nm={d:'daily',w:'weekly',m:'monthly'}[v],bf=['the day before','the week before','the month before']['dwm'.indexOf(v)],w0=wk(t),
@@ -68,7 +69,7 @@ by={};L.filter(x=>x.y=='s').forEach(x=>by[x.n]=(by[x.n]||0)+x.a);const top=Objec
 tl=x=>{const a=inr(x,t);return sp(a)},bl={d:same('d',t,now)?'Today':new Date(t).toLocaleDateString('en-US',{weekday:'short',day:'numeric'}),w:same('w',t,now)?'This week':'Week of '+d0(w0).getDate(),m:same('m',t,now)?'This month':MO[new Date(t).getMonth()]},
 I=inr(v,t),inn=I.filter(x=>x.y=='i').reduce((s,x)=>s+x.a,0),ot=sp(I),mth=new Date(t).getMonth();
 return`<div class="r sb" style="margin-bottom:10px"><div class="r"><button class="av" onclick="go('p')">${esc((S.name||'?')[0].toUpperCase())}</button><div><span class="mu">Good ${h<12?'morning':h<17?'afternoon':'evening'}</span><div><b style="font-size:19px">${esc(S.name||'there')}</b></div></div></div><button class="g" onclick="go('m')">Messages</button></div>
-${lm.on?`<p style="margin:6px 0 12px">You are <b style="color:${col(pc)}">${K(Math.abs(lm.v-spent))}</b> ${spent>lm.v?'over':'under'} your ${nm} limit. ${pc>100?'Ease off.':pc>=80?'Almost at your limit.':'Nice pace.'}</p>`:''}
+${ban()}${lm.on?`<p style="margin:6px 0 12px">You are <b style="color:${col(pc)}">${K(Math.abs(lm.v-spent))}</b> ${spent>lm.v?'over':'under'} your ${nm} limit. ${pc>100?'Ease off.':pc>=80?'Almost at your limit.':'Nice pace.'}</p>`:''}
 <div class="sc">${[-2,-1,0,1,2].map(k=>{const m=shift('m',t,k),a=new Date(m);return`<button class="g ${k==0?'on':''}" onclick="S.sel=${same('m',m,now)?'Date.now()':m};go()">${MO[a.getMonth()].slice(0,3)}</button>`}).join('')}</div>
 <div class="r sb" style="margin:8px 0"><button class="g" onclick="S.sel=${shift(v,t,-1)};go()">‹</button><b>${v=='d'?dl(t):v=='w'?dl(w0)+' to '+dl(+w0+6*DAY):MO[mth]+' '+new Date(t).getFullYear()}</b><button class="g" onclick="S.sel=${Math.min(shift(v,t,1),now)};go()" ${same(v,t,now)?'disabled style="opacity:.4"':''}>›</button></div>
 <div class="r" style="margin-bottom:12px">${[0,1,2,3,4,5,6].map(i=>{const d=+w0+i*DAY,a=same('d',d,t);return`<button class="day ${a&&v=='d'?'on':''}" ${v=='w'&&same('w',d,t)&&!a?'style="background:color-mix(in srgb,var(--ac) 14%,transparent)"':''} onclick="S.sel=${Math.min(d,now)};go()"><span class="mu" style="color:inherit">${'MTWTFSS'[i]}</span><b>${new Date(d).getDate()}</b></button>`}).join('')}</div>
@@ -109,6 +110,28 @@ function prof(){const dys=new Set(S.tx.map(x=>+d0(x.t))).size;return back('Profi
 <div class="cd"><label>Name</label><input value="${esc(S.name)}" onchange="S.name=this.value;save()"><label>Email (for backup and sync, coming soon)</label><input value="${esc(S.email)}" onchange="S.email=this.value;save()"><label>Appearance</label><div class="r" style="margin:8px 0 12px">${Object.keys(TH).map(k=>`<button class="sw" aria-label="${k}" style="background:${TH[k]};border-color:${k==S.theme?'var(--tx)':'transparent'}" onclick="S.theme='${k}';go()"></button>`).join('')}</div>
 <button class="g" style="width:100%" onclick="S.dark=!S.dark;go()">${S.dark?'Pure black dark mode: on':'Dark mode: off'}</button><label style="display:block;margin-top:14px">PIN lock (4 to 6 digits, empty = off)</label><input type="password" inputmode="numeric" maxlength="6" value="${S.pin}" onchange="S.pin=this.value;save()"></div>
 <button class="g" style="width:100%;margin-bottom:10px" onclick="go('m')">Messages and categories</button><button class="g" style="width:100%" onclick="go('b')">Spending limits</button><p class="mu" style="text-align:center;margin-top:18px">Spendwise 1.3.0 · Your data stays on this phone</p>`}
-function src(){const n=Object.keys(S.rules);return back('Messages and categories')+`<div class="cd"><b>Read messages from</b><div class="mu">Turn on every sender you use. Spendwise reads money in and money out.</div>${Object.keys(S.src).map(k=>`<div class="row"><div class="ic">${k[0]}</div><div class="f1"><b>${esc(k)}</b><div class="mu">${S.tx.length&&S.src[k]?'On':'Off'}</div></div><input type="checkbox" style="width:24px;height:24px;margin:0" ${S.src[k]?'checked':''} onchange="S.src['${esc(k)}']=this.checked?1:0;go('m')"></div>`).join('')}<div class="r" style="margin-top:10px"><input id="ns" placeholder="Add a sender name" style="margin:0"><button class="g" onclick="$('#ns').value&&(S.src[$('#ns').value.trim()]=1,go('m'))">Add</button></div></div>
+function src(){const n=Object.keys(S.rules);return back('Messages and categories')+`<div class="cd"><b>Read messages from</b><div class="mu">Turn on every sender you use. Spendwise reads money in and money out.</div>${Object.keys(S.src).map(k=>`<div class="row"><div class="ic">${k[0]}</div><div class="f1"><b>${esc(k)}</b><div class="mu">${S.tx.length&&S.src[k]?'On':'Off'}</div></div><input type="checkbox" style="width:24px;height:24px;margin:0" ${S.src[k]?'checked':''} onchange="S.src['${esc(k)}']=this.checked?1:0;go('m');sync()"></div>`).join('')}<div class="r" style="margin-top:10px"><input id="ns" placeholder="Add a sender name" style="margin:0"><button class="g" onclick="$('#ns').value&&(S.src[$('#ns').value.trim()]=1,go('m'))">Add</button></div></div>
 <div class="cd"><div class="r sb"><b>Smart categories</b><span class="mu">${n.length} rules</span></div><div class="mu">Learned from your edits. New messages from these names are filed for you.</div>${n.map(k=>`<div class="r sb" style="margin-top:10px"><div>${esc(k)}<div class="mu">${esc(S.rules[k])}</div></div><button class="g" onclick="delete S.rules['${esc(k)}'];go('m')">Remove</button></div>`).join('')||'<p class="mu">Tick “Always file…” when editing a transaction to add one.</p>'}</div>`}
-go()</script></body></html>
+// ---- Android bridge ----
+const SND={'M-Pesa':'MPESA','Airtel Money':'AIRTEL','Equity Bank':'EQUITY',KCB:'KCB','Co-op Bank':'COOP'},
+CT=[[/kplc|kenya power|water|zuku|wifi|dstv|gotv|safaricom home/i,'Bills and utilities'],[/uber|bolt|little|matatu|fuel|petrol|shell|rubis/i,'Transport'],[/naivas|quickmart|carrefour|chandarana|supermarket|butcher|mama|grocer|market|cafe|restaurant|kfc|java/i,'Food and groceries'],[/airtime|data|bundle/i,'Airtime and data'],[/rent|landlord/i,'Rent']],
+tc=s=>s.toLowerCase().replace(/\b[a-z]/g,c=>c.toUpperCase()),
+ban=()=>window.Android&&!Android.hasPermission()?`<div class="cd"><b>Allow Spendwise to read your messages</b><div class="mu" style="margin:6px 0 12px">Only messages from your chosen senders are read, never personal chats. Nothing leaves your phone.</div><button class="b" onclick="window.ask=1;Android.requestPermission()">Allow</button><button class="g" style="width:100%;margin-top:8px" onclick="Android.openSettings()">Open app settings</button></div>`:'';
+function parse(m){const b=String(m.body).replace(/\s+/g,' ').trim(),a=(b.match(/(?:Ksh|KES)\.?\s?([\d,]+(?:\.\d+)?)/i)||[])[1];if(!a||/reversal|reversed/i.test(b))return;
+const amt=+a.replace(/,/g,''),x={id:(b.match(/^([A-Z0-9]{8,12}) confirmed/i)||[])[1]||m.ts+'-'+amt,t:m.ts,a:amt,c:'Other',k:'t'};let r;
+if(/fuliza/i.test(b)&&!/sent to|paid to/i.test(b)){x.y='l';x.n='Fuliza M-PESA'}
+else if(/m-?shwari|kcb m-?pesa|own (?:account|a\/c)/i.test(b)){x.y='o';x.n=/m-?shwari/i.test(b)?'M-Shwari transfer':'Own account transfer'}
+else if(/you have received|credited|deposit/i.test(b)){x.y='i';x.k='p';r=b.match(/from (.+?)(?= (?:\+?254|0)\d{8,9}| on \d| at \d|\.|$)/i);x.n='Received from '+(r?tc(r[1].trim()):'someone')}
+else if(/airtime/i.test(b)){x.y='s';x.n='Airtime';x.c='Airtime and data'}
+else if(/withdraw/i.test(b)){x.y='s';x.n='Cash withdrawal'}
+else if(r=b.match(/(?:sent|paid) to (.+?)(?= (?:\+?254|0)\d{8,9}| on \d| at \d| for account|\.|$)/i)){x.y='s';x.k=/sent to .+? (?:\+?254|0)\d{8,9}/i.test(b)?'p':'t';x.n=(x.k=='p'?'Sent to ':'')+tc(r[1].trim())}
+else if(/debited|purchase|spent/i.test(b)){x.y='s';x.n='Payment'}
+else return;
+if(x.y=='s'&&x.c=='Other'){const h=CT.find(z=>z[0].test(x.n));if(h)x.c=h[1]}return x}
+function sync(){if(!window.Android||!Android.hasPermission())return;let raw=[];try{raw=JSON.parse(Android.readSms(365,Object.keys(S.src).filter(k=>S.src[k]).map(k=>SND[k]||k).join(',')))}catch(e){}SpendwiseImport(raw.map(parse).filter(Boolean))}
+const bio=()=>{if(S.lock&&S.pin&&window.Android&&Android.canBiometric())Android.authenticate()};
+window.onSmsPermission=()=>{window.ask=0;sync();go()};
+window.onAppPause=()=>{if(S.pin&&!window.ask)S.lock=1;save()};
+window.onAppResume=()=>{if(S.lock){go();bio()}sync()};
+window.onBioResult=ok=>{if(ok){S.lock=0;go()}};
+go();sync();bio()</script></body></html>
