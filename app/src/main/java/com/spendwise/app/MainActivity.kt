@@ -11,6 +11,13 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.CancellationSignal
+import android.os.SystemClock
+import android.graphics.Color
+import android.view.View
+import android.widget.Toast
+import android.webkit.RenderProcessGoneDetail
+import android.webkit.WebResourceRequest
+import android.webkit.WebViewClient
 import android.provider.Settings
 import android.provider.Telephony
 import android.webkit.JavascriptInterface
@@ -68,6 +75,23 @@ class MainActivity : Activity() {
         }
 
         @JavascriptInterface
+        fun appVersion(): String = try { packageManager.getPackageInfo(packageName, 0).versionName ?: "" } catch (e: Exception) { "" }
+
+        // Matches the status and navigation bars to the page theme (the page calls this on every render).
+        @Suppress("DEPRECATION")
+        @JavascriptInterface
+        fun setBars(color: String, dark: Boolean) = runOnUiThread {
+            try {
+                val c = Color.parseColor(color)
+                window.statusBarColor = c
+                window.navigationBarColor = c
+                val light = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+                val f = window.decorView.systemUiVisibility
+                window.decorView.systemUiVisibility = if (dark) f and light.inv() else f or light
+            } catch (e: Exception) { }
+        }
+
+        @JavascriptInterface
         fun openSettings() = runOnUiThread {
             startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + packageName)))
         }
@@ -108,11 +132,22 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.statusBarColor = Color.BLACK
+        window.navigationBarColor = Color.BLACK
         web = WebView(this)
+        web.setBackgroundColor(Color.BLACK)
         setContentView(web)
         web.settings.javaScriptEnabled = true
         web.settings.domStorageEnabled = true
+        // Only the bundled page is ever shown. Asset loading is unaffected by these switches and
+        // localStorage (your saved data) keeps the same file:// origin, so nothing is lost.
+        web.settings.allowFileAccess = false
+        web.settings.allowContentAccess = false
         web.webChromeClient = WebChromeClient()
+        web.webViewClient = object : WebViewClient() {
+            override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean = true
+            override fun onRenderProcessGone(view: WebView?, detail: RenderProcessGoneDetail?): Boolean { recreate(); return true }
+        }
         web.addJavascriptInterface(Bridge(), "Android")
         web.loadUrl("file:///android_asset/spendwise.html")
     }
@@ -131,8 +166,23 @@ class MainActivity : Activity() {
         web.evaluateJavascript("window.onSmsPermission&&onSmsPermission()", null)
     }
 
+    private var lastBack = 0L
+
+    // The page owns the navigation history (screens, sheets, dialogs), so ask it first. Only when it
+    // reports it is already at the start (Home) do we treat the press as an exit request, and that
+    // needs a second press within two seconds, so Spendwise never closes by accident.
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
-        if (web.canGoBack()) web.goBack() else super.onBackPressed()
+        web.evaluateJavascript("(function(){try{return window.swBack?swBack():'root'}catch(e){return 'root'}})()") { r ->
+            if (r == null || !r.contains("consumed")) {
+                val now = SystemClock.elapsedRealtime()
+                if (now - lastBack < 2000) {
+                    finish()
+                } else {
+                    lastBack = now
+                    Toast.makeText(this, "Press back again to exit Spendwise", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
     }
 }
